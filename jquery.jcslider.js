@@ -48,15 +48,21 @@
 	            animationIn     : 'bounceInRight',
 	            animationOut    : 'bounceOutLeft',
 	            stopOnHover     : true,
-	            loop            : true
+	            loop            : true,
+		    splitString	    : " "	//多个动画名之间的分割符号
 	        }, options );
 
-	        var animateOut = 'animated ' + settings.animationOut,
-	            animateIn =  'animated ' + settings.animationIn,
+	        var animateOut,
+	            animateIn,
 	            animationItem = $this.find('.jc-animation'),
 	            animationItemsLength = animationItem.length,
 	            animationCurrentItem = 0,
-	            jcSliderInterval = null;
+	            jcSliderInterval = null,
+		    splitString = settings.splitString;
+
+            // 用来保存上一次的随机动画名
+            var ANIMATE_IN_DATA_NAME = 'lastAnimateInClassName';
+            var ANIMATE_OUT_DATA_NAME = 'lastAnimateOutClassName';
 
 
 	        // Detect when animations (keyframes) end
@@ -79,29 +85,47 @@
 	        }
 	        var animationEvent = whichAnimationEvent();
 
+			//从空格切割字符串的数组中 获取随机元素
+			function getAnimationName(animationString){
+
+				//如果动画名字只有一个就直接返回该动画名
+				if ( animationString.indexOf(splitString) == -1 ) {
+					return 'animated ' + animationString;
+				}
+
+				//如果有多个动画名 就随机返回其中的一个动画名
+				var animationNameArray = animationString.split(splitString);
+				return 'animated ' + animationNameArray[Math.floor(Math.random() * animationNameArray.length)];
+			}
 
 	        // main function
 	        var jcSliderAnimation = function() {
 
 	            jcSliderInterval = setInterval(function() {
-	                
+
 	                // stop animation if loop is false and we are on the last image
 	                if (settings.loop === false && animationCurrentItem == (animationItemsLength -2)) {
 	                    clearInterval(jcSliderInterval);
 	                }
 
-	                animationItem.eq(animationCurrentItem)
-	                .removeClass(animateIn) // reset enter animation
+			animateOut = getAnimationName(settings.animationOut);
+
+			var currentAnimationItem = animationItem.eq(animationCurrentItem);
+
+			currentAnimationItem
+	                .removeClass(currentAnimationItem.data(ANIMATE_IN_DATA_NAME)) // reset enter animation
 	                .addClass(animateOut)   // exit animation
+			.data(ANIMATE_OUT_DATA_NAME, animateOut)    // 保存随机动画名
 
 	                // when exit animation is finished, move next item
 	               .one(animationEvent,
 
 	                    function() {
 
+				var currentAnimationItem = animationItem.eq(animationCurrentItem);
 	                        // move current item
-	                        animationItem.eq(animationCurrentItem)
-	                        .removeClass(animateOut) // reset exit animation
+				currentAnimationItem
+	                        .removeClass(currentAnimationItem.data(ANIMATE_OUT_DATA_NAME)) // reset exit animation
 	                        .hide();      // hide
 
 	                        // select next item
@@ -110,10 +134,13 @@
 	                            animationCurrentItem = 0;
 	                        }
 
+				animateIn = getAnimationName(settings.animationIn);
+
 	                        // move next item
 	                        animationItem.eq(animationCurrentItem)
 	                        .show() // show
-	                        .addClass(animateIn);  // next item animation
+	                        .addClass(animateIn)  // next item animation
+				.data(ANIMATE_IN_DATA_NAME, animateIn); // 保存随机动画名
 
 	                    });
 
